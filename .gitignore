@@ -1,0 +1,10 @@
+# Ignore generated data directories
+data/frames/
+data/videos/
+
+# Ignore all NumPy binary files (large and auto-generated)
+*.npy
+
+# Ensure models are ignored unless explicitly needed
+models/*.h5  
+models/*.pkl 
