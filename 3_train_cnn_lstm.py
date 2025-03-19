@@ -7,69 +7,76 @@ from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 from sklearn.preprocessing import LabelEncoder
 
-# Paths and parameters
+# Parameters
 LABELS_PATH = "data/labeled_frames/labels.npy"
-IMAGE_FOLDER = "data/frames"  # Directory containing extracted frames
-SEQUENCE_LENGTH = 5  # Number of frames per sequence
-IMAGE_SIZE = (48, 48)  # Image resolution
+IMAGE_FOLDER = "data/frames"
+SEQUENCE_LENGTH = 5
+IMAGE_SIZE = (48, 48)
 
-# Load emotion labels
+# Load labels
 labels_dict = np.load(LABELS_PATH, allow_pickle=True).item()
 
-# Ensure labels are sorted by time order
-sorted_files = sorted(labels_dict.keys())  
+# Flatten labels into { full_frame_path : label }
+flatten_labels = {}
+for user_id in labels_dict:
+    for condition in labels_dict[user_id]:
+        for frame_name, label in labels_dict[user_id][condition].items():
+            frame_path = os.path.join(user_id, condition, frame_name)
+            flatten_labels[frame_path] = label
 
-# Construct LSTM training dataset
+# Group frames by user_id and condition
+grouped_frames = {}
+for frame_path in flatten_labels:
+    parts = frame_path.split(os.sep)
+    user_id, condition, frame_name = parts[0], parts[1], parts[2]
+    key = (user_id, condition)
+    if key not in grouped_frames:
+        grouped_frames[key] = []
+    grouped_frames[key].append((frame_path, flatten_labels[frame_path]))
+
+# Prepare sequences
 sequences = []
 labels_list = []
 
-for i in range(len(sorted_files) - SEQUENCE_LENGTH):
-    sequence = []
-    for j in range(i, i + SEQUENCE_LENGTH):
-        img_path = os.path.join(IMAGE_FOLDER, sorted_files[j])
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)  # Load image in grayscale
-        img = cv2.resize(img, IMAGE_SIZE)  # Resize image
-        img = img / 255.0  # Normalize pixel values
-        sequence.append(img)
+for key in grouped_frames:
+    frames = sorted(grouped_frames[key], key=lambda x: int(x[0].split('_')[-1].split('.')[0]))  # sort by frame index
+    for i in range(len(frames) - SEQUENCE_LENGTH):
+        sequence = []
+        for j in range(i, i + SEQUENCE_LENGTH):
+            img_path = os.path.join(IMAGE_FOLDER, frames[j][0])
+            img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+            img = cv2.resize(img, IMAGE_SIZE)
+            img = img / 255.0
+            sequence.append(img)
+        label = frames[i + SEQUENCE_LENGTH][1]  # use label of last frame
+        sequences.append(np.array(sequence))
+        labels_list.append(label)
 
-    label = labels_dict[sorted_files[i + SEQUENCE_LENGTH]]  # 取最後一張影像的標記
-    sequences.append(np.array(sequence))
-    labels_list.append(label)
+print(f"✅ Total sequences: {len(sequences)}")
 
-# Convert to NumPy arrays and reshape
+# Convert to arrays
 x_data = np.array(sequences).reshape(len(sequences), SEQUENCE_LENGTH, IMAGE_SIZE[0], IMAGE_SIZE[1], 1)
 y_data = np.array(labels_list)
 
-# Convert string labels to integer labels
+# Encode labels
 label_map = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 label_encoder = LabelEncoder()
 label_encoder.fit(label_map)
-y_data = label_encoder.transform(y_data)  # Encode labels as integers
-
-# Convert labels to one-hot encoding
+y_data = label_encoder.transform(y_data)
 y_data = to_categorical(y_data, num_classes=7)
 
-# Split dataset into training and test sets
+# Train-test split
 x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size=0.2, random_state=42)
+print("✅ x_train shape:", x_train.shape)
+print("✅ y_train shape:", y_train.shape)
 
-# Verify dataset shapes
-print("✅ x_train shape:", x_train.shape)  # (batch_size, SEQUENCE_LENGTH, 48, 48, 1)
-print("✅ y_train shape:", y_train.shape)  # (batch_size, 7) (one-hot encoded)
-
-if not os.path.exists("data"):
-    os.makedirs("data")
-    
-# Save test data
+# Save data (optional)
+np.save("data/x_train.npy", x_train)
+np.save("data/y_train.npy", y_train)
 np.save("data/x_test.npy", x_test)
 np.save("data/y_test.npy", y_test)
 
-# Save training data
-np.save("data/x_train.npy", x_train)
-np.save("data/y_train.npy", y_train)
-
-print("✅ Test data successfully saved!")
-
-# CNN + LSTM Model
+# Build model
 model = Sequential()
 model.add(TimeDistributed(Conv2D(64, (3,3), activation='relu'), input_shape=(SEQUENCE_LENGTH, 48, 48, 1)))
 model.add(TimeDistributed(MaxPooling2D(pool_size=(2,2))))
@@ -78,12 +85,10 @@ model.add(LSTM(128, return_sequences=True))
 model.add(LSTM(64))
 model.add(Dense(64, activation='relu'))
 model.add(Dropout(0.3))
-model.add(Dense(7, activation='softmax'))  # 7 emotion classes
+model.add(Dense(7, activation='softmax'))
 
-# Compile and train the model
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 model.fit(x_train, y_train, batch_size=64, epochs=50, validation_data=(x_test, y_test))
 
-# Save the trained model
 model.save("models/lstm_model.h5")
 print("✅ CNN+LSTM training completed!")

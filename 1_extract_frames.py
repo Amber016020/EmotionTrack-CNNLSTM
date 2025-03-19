@@ -1,26 +1,26 @@
 import cv2
 import os
+import re
 
 # Directories for input videos and output frames
 VIDEO_DIR = "data/videos"
 FRAME_DIR = "data/frames"
 FRAME_RATE = 5  # Extract 5 frames per second
 
+# Regular expression to parse file name
+FILENAME_PATTERN = r"recording-(\d+)-([a-zA-Z\-]+)-"
+
 # Ensure the output directory exists
 if not os.path.exists(FRAME_DIR):
     os.makedirs(FRAME_DIR)
 
-def extract_frames(video_path, output_folder):
+def extract_frames(video_path, user_id, condition, output_folder):
     """
-    Extracts frames from a video file at a specified frame rate.
-    
-    Args:
-        video_path (str): Path to the input video file.
-        output_folder (str): Directory to save the extracted frames.
+    Extract frames from video and save them in user_id/condition folder.
     """
     cap = cv2.VideoCapture(video_path)
     fps = int(cap.get(cv2.CAP_PROP_FPS))
-    frame_interval = fps // FRAME_RATE
+    frame_interval = max(fps // FRAME_RATE, 1)
 
     count = 0
     while cap.isOpened():
@@ -35,7 +35,21 @@ def extract_frames(video_path, output_folder):
     cap.release()
 
 # Process all videos in the directory
-for video in os.listdir(VIDEO_DIR):
-    extract_frames(os.path.join(VIDEO_DIR, video), FRAME_DIR)
+for video_file  in os.listdir(VIDEO_DIR):
+    match = re.match(FILENAME_PATTERN, video_file)
+    if match:
+        user_id = match.group(1)
+        condition = match.group(2)
+
+        # Create output folder: data/frames/user_id/condition/
+        output_subfolder = os.path.join(FRAME_DIR, user_id, condition)
+        os.makedirs(output_subfolder, exist_ok=True)
+
+        print(f"📁 Processing {video_file} → User: {user_id}, Condition: {condition}")
+
+        # Extract frames
+        video_path = os.path.join(VIDEO_DIR, video_file)
+        extract_frames(video_path, user_id, condition, output_subfolder)
+
 
 print("✅ Frame extraction completed!")

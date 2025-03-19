@@ -8,3 +8,6 @@ data/videos/
 # Ensure models are ignored unless explicitly needed
 models/*.h5  
 models/*.pkl 
+
+# Ignore visualization result images
+results/*.png

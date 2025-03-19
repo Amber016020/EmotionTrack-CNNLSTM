@@ -40,10 +40,26 @@ def predict_emotion(image_path):
 
 # Predict emotions for all images and store results
 predictions = {}
-for img_name in tqdm(os.listdir(FRAME_DIR)):
-    img_path = os.path.join(FRAME_DIR, img_name)
-    predictions[img_name] = predict_emotion(img_path)
+for user_id in tqdm(os.listdir(FRAME_DIR)):
+    user_path = os.path.join(FRAME_DIR, user_id)
+    if not os.path.isdir(user_path):
+        continue  # Skip non-folder files
+    
+    predictions[user_id] = {}
+    
+    for condition in os.listdir(user_path):
+        condition_path = os.path.join(user_path, condition)
+        if not os.path.isdir(condition_path):
+            continue
+        
+        print(f"📁 Processing: User {user_id}, Condition {condition}")
+        predictions[user_id][condition] = {}
+        
+        for img_name in os.listdir(condition_path):
+            img_path = os.path.join(condition_path, img_name)
+            label = predict_emotion(img_path)
+            predictions[user_id][condition][img_name] = label
 
-# Save labeled data
+# Save labeled results
 np.save(os.path.join(LABELED_DIR, "labels.npy"), predictions)
-print("✅ Emotion labeling completed!")
+print("✅ Emotion labeling completed and saved!")
