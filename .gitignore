@@ -1,6 +1,5 @@
 # Ignore generated data directories
-data/frames/
-data/videos/
+data/
 
 # Ignore all NumPy binary files (large and auto-generated)
 *.npy
@@ -11,3 +10,20 @@ models/*.pkl
 
 # Ignore visualization result images
 results/*.png
+
+你說：
+# Ignore generated data directories
+data/
+
+# Ignore all NumPy binary files (large and auto-generated)
+*.npy
+
+# Ensure models are ignored unless explicitly needed
+models/*.h5  
+models/*.pkl 
+
+# Ignore visualization result images
+results/*.png
+
+# Ignore all PyTorch model files
+*.pth

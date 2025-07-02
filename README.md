@@ -20,56 +20,56 @@ A deep learning-based facial emotion recognition system designed to analyze emot
   - Annotates peaks & valleys with corresponding facial frames.
   - Generates clear visual charts per user & condition.
 - **Model Evaluation:** Calculates accuracy, F1-score, confusion matrix to assess model performance.
+- **Real-Time Emotion Recognition:** Uses webcam input to perform live facial emotion classification and display.
+- **Standalone CNN Training Notebook:** Provides an independent Jupyter notebook to train CNN classifiers without LSTM.
+
+---
+## Folder Structure
+
+EmotionTrack-CNNLSTM/
+├── data/
+│   ├── video/               # Original user-recorded videos
+│   ├── frame/               # Extracted face frames
+│   └── feature/             # CNN feature sequences & pseudo labels
+├── models/
+│   ├── cnn_model.h5         # Trained CNN
+│   └── lstm_model.h5        # Trained LSTM
+├── results/
+│   └── predictions/         # Output of final emotion predictions
+├── 1_train_cnn.py
+├── 2_extract_frames.py
+├── 3_augment_face_sequences.py
+├── 4_generate_pseudo_labels.py
+├── 5_train_lstm.py
+└── 6_predict_labels.py
+
   
 ---
 
-## 🗂️ Folder Structure
+## Pipeline Overview
+1. Train CNN on Facial Emotion Dataset
+📄 1_train_cnn.py
+Train a CNN classifier (e.g., on FER2013) to recognize 7 facial emotions from single images.
 
-```
-EmotionTrack-CNNLSTM
-├── data
-│   ├── videos               # Raw video files (one per minute)
-│   ├── frames               # Extracted frames organized by user_id/condition
-│   └── labeled_frames       # Emotion labels saved in .npy
-├── models
-│   └── facialemotionmodel.h5  # Pre-trained CNN model
-│   └── lstm_model.h5          # Trained CNN+LSTM model
-├── results
-│   └── emotion_trend_X_X.png  # Visualized emotion trend plots
-├── 1_extract_frames.py      # Extract frames & organize folders
-├── 2_label_frames.py        # CNN model labels emotion on frames
-├── 3_train_cnn_lstm.py      # Train CNN + LSTM sequence model
-├── 4_evaluate_model.py      # Evaluate model accuracy & F1-score
-├── 5_visualize_emotion.py   # Plot emotion transitions + annotate frames
-└── README.md
-```
+2. Extract Faces from User Videos
+📄 2_extract_frames.py
+Extract face frames from recorded videos at 5 FPS. Organize them into folders by user ID and condition.
 
----
+3. Augment Face Image Sequences
+📄 3_augment_face_sequences.py
+Apply data augmentation (horizontal flip, rotation) to expand the training set diversity.
 
-## 🚀 Workflow Overview
+4. Generate Pseudo Labels for CNN Features
+📄 4_generate_pseudo_labels.py
+Use the trained CNN model to label each frame. Generate and save CNN feature sequences and pseudo labels in .npy and .json formats.
 
-1. **Frame Extraction:**
-   - `1_extract_frames.py`  
-   - Extracts 5 FPS frames from videos, categorizes them into `user_id/condition` folders.
+5. Train LSTM on Feature Sequences
+📄 5_train_lstm.py
+Feed the padded CNN feature sequences into an LSTM model to learn temporal patterns. Save the trained LSTM model for evaluation.
 
-2. **Emotion Labeling:**
-   - `2_label_frames.py`  
-   - Uses pre-trained CNN to label each frame's emotion → saves structured `.npy`.
-
-3. **Model Training:**
-   - `3_train_cnn_lstm.py`  
-   - Constructs sequences of frames (length = 5), feeds into CNN+LSTM for training.
-   - Saves trained model `lstm_model.h5`.
-
-4. **Model Evaluation:**
-   - `4_evaluate_model.py`  
-   - Calculates accuracy, F1-score, confusion matrix.
-
-5. **Emotion Trend Visualization:**
-   - `5_visualize_emotion.py`  
-   - Smooths predictions over time.
-   - Annotates peaks & valleys with actual frame images.
-   - Saves charts for each user-condition.
+6. Predict Emotion Sequences Using LSTM
+📄 6_predict_labels.py
+Apply the trained LSTM model to unseen video sequences and generate emotion predictions for each user-condition session.
 
 ---
 
