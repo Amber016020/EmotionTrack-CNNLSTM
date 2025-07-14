@@ -7,7 +7,7 @@ FRAME_DIR = "data/frame/train"
 FRAME_RATE = 5
 FACE_SIZE = (112, 112)
 
-# 載入 OpenCV 的人臉偵測模型
+# 載入 OpenCV 的人臉偵測模型（仍用灰階判斷）
 FACE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 os.makedirs(FRAME_DIR, exist_ok=True)
 
@@ -30,7 +30,7 @@ def extract_face_frames(video_path, video_id):
 
             if len(faces) > 0:
                 x, y, w, h = faces[0]
-                face_img = gray[y:y+h, x:x+w]
+                face_img = frame[y:y+h, x:x+w]  # 使用彩色 frame 抓臉
                 face_resized = cv2.resize(face_img, FACE_SIZE)
 
                 # 每支影片一個資料夾，命名為 video_id（去掉副檔名）
@@ -63,4 +63,4 @@ for root, dirs, files in os.walk(VIDEO_DIR):
             video_path = os.path.join(root, video_file)
             extract_face_frames(video_path, video_id)
 
-print("✅ All face frames extracted, gray-scaled, resized, and saved (one folder per video)!")
+print("✅ All face frames extracted, color-preserved, resized, and saved (one folder per video)!")

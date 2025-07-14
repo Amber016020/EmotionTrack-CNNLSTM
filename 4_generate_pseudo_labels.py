@@ -50,7 +50,7 @@ def safe_save_json(path, data):
 # ==== 設定參數 ====
 FRAME_DIR = "data/frame/train"
 FEATURE_DIR = "data/feature"
-CNN_MODEL_PATH = "models/facialemotionmodel.h5"
+CNN_MODEL_PATH = "xception_affectnet_pretrained.h5"
 SEQUENCE_SAVE_PATH = os.path.join(FEATURE_DIR, "sequences.npy")
 LABEL_PATH = os.path.join(FEATURE_DIR, "pseudo_labels.json")
 
@@ -69,7 +69,7 @@ os.makedirs(FEATURE_DIR, exist_ok=True)
 
 # ==== 載入模型（flatten 層） ====
 cnn_model = load_model(CNN_MODEL_PATH, compile=False)
-feature_model = Model(inputs=cnn_model.input, outputs=cnn_model.get_layer("flatten_3").output)
+feature_model = Model(inputs=cnn_model.input, outputs=cnn_model.get_layer("global_average_pooling2d").output)
 
 # ==== 載入已存在資料（續跑用）====
 features_dict = {}
